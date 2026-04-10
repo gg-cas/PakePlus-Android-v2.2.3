@@ -1,11 +1,700 @@
 <!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>PakePlus</title>
-    </head>
-    <body>
-        PakePlus
-    </body>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>密码生成 - 到期时间密码生成器</title>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI','Microsoft YaHei',sans-serif}
+        body{background:linear-gradient(135deg,#6a11cb 0%,#2575fc 100%);color:#333;min-height:100vh;display:flex;justify-content:center;align-items:center;padding:20px}
+        .container{width:100%;max-width:500px;background:rgba(255,255,255,0.95);border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,0.2);padding:30px;backdrop-filter:blur(10px)}
+        .company-header{text-align:center;margin-bottom:25px;border-bottom:1px solid rgba(0,0,0,0.1);padding-bottom:15px}
+        .company-name{font-size:22px;font-weight:700;color:#0d47a1;margin-bottom:5px}
+        .app-name{font-size:16px;color:#666;font-weight:500}
+        .user-bar{display:flex;align-items:center;justify-content:space-between;background:#f5f7ff;border-radius:12px;padding:10px 15px;margin-bottom:20px;border:2px solid #e0e0e0}
+        .user-bar select{flex:1;padding:8px 10px;border:2px solid #d0d0d0;border-radius:8px;font-size:14px;background:#fff;color:#333;cursor:pointer;min-width:0}
+        .user-bar select:focus{outline:none;border-color:#0d47a1}
+        .user-btns{display:flex;gap:6px;margin-left:10px}
+        .user-btns button{width:36px;height:36px;border:none;border-radius:8px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:opacity .2s}
+        .user-btns button:hover{opacity:.8}
+        .btn-add-user{background:#4caf50;color:#fff}
+        .btn-edit-user{background:#ff9800;color:#fff}
+        .btn-del-user{background:#d32f2f;color:#fff}
+        .input-group{margin-bottom:20px}
+        .input-group label{display:block;margin-bottom:8px;font-weight:600;color:#444;font-size:15px}
+        input[type="text"],input[type="date"],input[type="number"]{width:100%;padding:15px;border:2px solid #e0e0e0;border-radius:10px;font-size:16px;transition:border .3s;background:#fff}
+        input:focus{outline:none;border-color:#0d47a1}
+        .date-info-group{display:flex;gap:15px;margin:15px 0 20px 0}
+        .date-info-box{flex:1;padding:12px;border-radius:8px;text-align:center}
+        .today-info{background:#f0f7ff;border:2px solid #0d47a1}
+        .days-info{background:#fff8e1;border:2px solid #ff9800}
+        .date-label{font-size:12px;margin-bottom:5px}
+        .today-label{color:#0d47a1}
+        .days-label{color:#ff9800}
+        .date-value{font-size:16px;font-weight:600}
+        .today-value{color:#0d47a1}
+        .days-value{color:#ff9800}
+        .generate-btn{width:100%;padding:16px;background:#0d47a1;color:white;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;transition:background .3s;margin-top:10px}
+        .generate-btn:hover{background:#1565c0}
+        .result-container{margin-top:25px;display:none}
+        .result-container.show{display:block}
+        .password-group{margin-bottom:20px}
+        .password-label{font-size:16px;color:#666;margin-bottom:8px;font-weight:600}
+        .password,.ultimate-password{font-size:28px;font-weight:700;padding:12px;border-radius:8px;text-align:center;letter-spacing:1px;word-break:break-all}
+        .password{color:#0d47a1;background:#f0f7ff;border:2px solid #0d47a1}
+        .ultimate-password{color:#d32f2f;background:#ffebee;border:2px solid #d32f2f}
+        .copy-btn{width:100%;padding:12px;background:#0d47a1;color:white;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;transition:background .3s;margin-top:10px}
+        .copy-btn.ultimate{background:#d32f2f}
+        .copy-btn:hover{opacity:.9}
+        .footer{text-align:center;margin-top:25px;color:rgba(255,255,255,0.8);font-size:12px}
+        .error-message{color:#d32f2f;font-size:13px;margin-top:5px;display:none}
+        .error-message.show{display:block}
+        .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:999;justify-content:center;align-items:center}
+        .modal-overlay.show{display:flex}
+        .modal{background:#fff;border-radius:16px;padding:30px;width:90%;max-width:400px;box-shadow:0 20px 40px rgba(0,0,0,0.3)}
+        .modal h3{margin-bottom:20px;color:#0d47a1;font-size:18px}
+        .modal .input-group{margin-bottom:15px}
+        .modal-btns{display:flex;gap:10px;margin-top:20px}
+        .modal-btns button{flex:1;padding:12px;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer}
+        .btn-confirm{background:#0d47a1;color:#fff}
+        .btn-cancel{background:#e0e0e0;color:#333}
+        .btn-danger{background:#d32f2f;color:#fff}
+        /* 记录条目样式 */
+        .record-item {
+            background: white;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-left: 4px solid #0d47a1;
+            border: 1px solid #e0e0e0;
+        }
+        .record-info-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .record-user {
+            font-weight: 600;
+            color: #0d47a1;
+        }
+        .record-time {
+            color: #888;
+            font-size: 12px;
+        }
+        .record-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+        .meta-row {
+            display: flex;
+            align-items: center;
+        }
+        .meta-label {
+            font-size: 13px;
+            color: #666;
+            min-width: 80px;
+        }
+        .meta-value {
+            font-size: 13px;
+            color: #333;
+            font-weight: 500;
+        }
+        .record-code {
+            font-family: monospace;
+        }
+        /* 真正的同一行布局 */
+        .record-passwords-row {
+            margin: 15px 0 10px 0;
+        }
+        .password-labels-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        .password-label-row {
+            width: 48%;
+            text-align: center;
+            font-weight: 600;
+            font-size: 14px;
+            color: #666;
+        }
+        .password-values-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        .password-value-box {
+            width: 48%;
+            padding: 8px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 18px;
+            font-weight: 700;
+            text-align: center;
+            word-break: break-all;
+        }
+        .password-value-normal {
+            color: #0d47a1;
+            background: #f0f7ff;
+            border: 2px solid #0d47a1;
+        }
+        .password-value-ultimate {
+            color: #d32f2f;
+            background: #ffebee;
+            border: 2px solid #d32f2f;
+        }
+        .copy-buttons-row {
+            display: flex;
+            justify-content: space-between;
+        }
+        .copy-btn-row {
+            width: 48%;
+            padding: 8px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .copy-btn-row.normal {
+            background: #0d47a1;
+            color: white;
+        }
+        .copy-btn-row.ultimate {
+            background: #d32f2f;
+            color: white;
+        }
+        .copy-btn-row:hover {
+            opacity: 0.9;
+        }
+        .record-delete {
+            background: none;
+            border: none;
+            color: #d32f2f;
+            cursor: pointer;
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 8px;
+            width: 100%;
+            text-align: right;
+        }
+        .record-delete:hover {
+            background: #ffebee;
+            border-radius: 4px;
+        }
+        @media(max-width:600px){
+            .container{padding:25px 20px;border-radius:15px}
+            .date-info-group{flex-direction:column;gap:10px}
+            .company-name{font-size:18px}.app-name{font-size:14px}
+            .password,.ultimate-password{font-size:24px;padding:12px 10px}
+            input,.generate-btn,.copy-btn{padding:15px}
+            .user-bar{flex-wrap:wrap;padding:10px}
+            .user-bar select{width:100%}
+            .user-btns{width:100%;justify-content:center;margin-left:0;margin-top:8px}
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 公司头部 -->
+        <div class="company-header">
+            <div class="company-name">密码管理器</div>
+            <div class="app-name">到期时间密码生成器</div>
+        </div>
+        
+        <!-- 用户选择栏 -->
+        <div class="user-bar">
+            <select id="user-select"></select>
+            <div class="user-btns">
+                <button class="btn-add-user" id="btn-add" title="添加用户">+</button>
+                <button class="btn-edit-user" id="btn-edit" title="编辑用户">&#9998;</button>
+                <button class="btn-del-user" id="btn-del" title="删除用户">&times;</button>
+            </div>
+        </div>
+        
+        <!-- 验证码输入 -->
+        <div class="input-group">
+            <label for="code">验证码：</label>
+            <input type="text" id="code" placeholder="例如: 499602D2" value="499602D2" inputmode="text">
+        </div>
+        
+        <!-- 到期日期选择 -->
+        <div class="input-group">
+            <label for="expiry-date">选择到期日期：</label>
+            <input type="date" id="expiry-date" min="" max="">
+        </div>
+        
+        <!-- 日期信息组 -->
+        <div class="date-info-group">
+            <div class="date-info-box today-info">
+                <div class="date-label today-label">今天日期</div>
+                <div class="date-value today-value" id="current-date"></div>
+            </div>
+            <div class="date-info-box days-info">
+                <div class="date-label days-label">增加天数</div>
+                <div class="date-value days-value" id="days-count">1天</div>
+            </div>
+        </div>
+        
+        <!-- 错误信息 -->
+        <div class="error-message" id="date-error"></div>
+        
+        <!-- 生成按钮 -->
+        <button class="generate-btn" id="generate-btn">生成密码</button>
+        
+        <!-- 结果显示区域 -->
+        <div class="result-container" id="result-container">
+            <div class="password-group">
+                <div class="password-label">普通密码</div>
+                <div class="password" id="password-result"></div>
+                <button class="copy-btn" id="copy-btn">复制普通密码</button>
+            </div>
+            <div class="password-group">
+                <div class="password-label">终极密码</div>
+                <div class="ultimate-password" id="ultimate-result"></div>
+                <button class="copy-btn ultimate" id="copy-ultimate-btn">复制终极密码</button>
+            </div>
+        </div>
+        
+        <!-- 密码生成记录区域 -->
+        <div class="record-container" id="record-container" style="margin-top: 25px; display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <div class="password-label">生成记录</div>
+                <button class="copy-btn" id="clear-all-btn" style="padding: 8px 12px; font-size: 14px; background: #757575;">全部清除</button>
+            </div>
+            <div class="record-list" id="record-list" style="background: #f9f9f9; border-radius: 8px; padding: 10px; max-height: 200px; overflow-y: auto; border: 1px solid #e0e0e0;">
+                <!-- 记录条目将通过JS动态添加 -->
+            </div>
+        </div>
+        
+        <!-- 页脚 -->
+        <div class="footer">&copy; 2024</div>
+    </div>
+
+    <!-- 用户编辑模态框 -->
+    <div class="modal-overlay" id="modal-user">
+        <div class="modal">
+            <h3 id="modal-title">添加用户</h3>
+            <div class="input-group"><label>用户名称</label><input type="text" id="modal-name" placeholder="请输入用户名称"></div>
+            <div class="input-group"><label>密钥1</label><input type="number" id="modal-key1" placeholder="请输入密钥1"></div>
+            <div class="input-group"><label>密钥2</label><input type="number" id="modal-key2" placeholder="请输入密钥2"></div>
+            <div class="modal-btns">
+                <button class="btn-cancel" id="modal-cancel">取消</button>
+                <button class="btn-confirm" id="modal-confirm">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除确认模态框 -->
+    <div class="modal-overlay" id="modal-del">
+        <div class="modal">
+            <h3>确认删除</h3>
+            <p id="del-msg" style="margin:15px 0;color:#555">确定要删除该用户吗？</p>
+            <div class="modal-btns">
+                <button class="btn-cancel" id="del-cancel">取消</button>
+                <button class="btn-danger" id="del-confirm">删除</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var STORAGE_KEY = 'pwgen_users_v1';
+        var RECORD_STORAGE_KEY = 'pwgen_records_v1';
+        var codeInput = document.getElementById('code');
+        var expiryDateInput = document.getElementById('expiry-date');
+        var currentDateElement = document.getElementById('current-date');
+        var daysCountElement = document.getElementById('days-count');
+        var dateErrorElement = document.getElementById('date-error');
+        var generateBtn = document.getElementById('generate-btn');
+        var resultContainer = document.getElementById('result-container');
+        var passwordResult = document.getElementById('password-result');
+        var ultimateResult = document.getElementById('ultimate-result');
+        var copyBtn = document.getElementById('copy-btn');
+        var copyUltimateBtn = document.getElementById('copy-ultimate-btn');
+        var userSelect = document.getElementById('user-select');
+        var modalUser = document.getElementById('modal-user');
+        var modalDel = document.getElementById('modal-del');
+        var editingId = null;
+        var deletingId = null;
+
+        function loadUsers() {
+            try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+            catch(e) { return []; }
+        }
+        function saveUsers(users) { localStorage.setItem(STORAGE_KEY, JSON.stringify(users)); }
+        function getUsers() {
+            var users = loadUsers();
+            if (users.length === 0) {
+                users = [{ id: 1, name: '默认用户', key1: '456', key2: '789' }];
+                saveUsers(users);
+            }
+            return users;
+        }
+        function getActiveId() {
+            var users = getUsers();
+            var activeId = parseInt(localStorage.getItem(STORAGE_KEY + '_active'));
+            if (!users.find(function(u){ return u.id === activeId; })) activeId = users[0].id;
+            return activeId;
+        }
+        function setActiveId(id) { localStorage.setItem(STORAGE_KEY + '_active', id); }
+        function getActiveUser() {
+            var users = getUsers();
+            var id = getActiveId();
+            return users.find(function(u){ return u.id === id; }) || users[0];
+        }
+
+        function loadRecords() {
+            try { return JSON.parse(localStorage.getItem(RECORD_STORAGE_KEY)) || []; }
+            catch(e) { return []; }
+        }
+
+        // 修改：保存记录时包含到期日期
+        function savePasswordRecord(code, days, expiryDate, userName, normalPw, ultimatePw) {
+            var records = loadRecords();
+            var newRecord = {
+                id: Date.now(),
+                timestamp: new Date().toLocaleString('zh-CN'),
+                code: code,
+                days: days,
+                expiryDate: expiryDate, // 新增：到期日期
+                user: userName,
+                normalPw: normalPw,
+                ultimatePw: ultimatePw
+            };
+            records.unshift(newRecord);
+            if (records.length > 20) records = records.slice(0, 20);
+            localStorage.setItem(RECORD_STORAGE_KEY, JSON.stringify(records));
+        }
+
+        // 修改：渲染记录列表，添加到期日期显示
+        function renderRecordList() {
+            var records = loadRecords();
+            var listEl = document.getElementById('record-list');
+            var containerEl = document.getElementById('record-container');
+
+            if (records.length === 0) {
+                listEl.innerHTML = '<div style="text-align:center; color:#999; padding:20px;">暂无生成记录</div>';
+                containerEl.style.display = 'none';
+                return;
+            }
+
+            containerEl.style.display = 'block';
+            listEl.innerHTML = '';
+
+            records.forEach(function(record) {
+                var itemEl = document.createElement('div');
+                itemEl.className = 'record-item';
+                itemEl.innerHTML = `
+                    <div class="record-info-top">
+                        <div class="record-user">${record.user}</div>
+                        <div class="record-time">${record.timestamp}</div>
+                    </div>
+                    <div class="record-meta">
+                        <div class="meta-row">
+                            <span class="meta-label">天数:</span>
+                            <span class="meta-value">${record.days}天</span>
+                        </div>
+                        <div class="meta-row">
+                            <span class="meta-label">到期日期:</span>
+                            <span class="meta-value">${record.expiryDate}</span>
+                        </div>
+                        <div class="meta-row">
+                            <span class="meta-label">验证码:</span>
+                            <span class="meta-value record-code">${record.code}</span>
+                        </div>
+                    </div>
+                    <!-- 真正的同一行布局 -->
+                    <div class="record-passwords-row">
+                        <!-- 第一行：标签 -->
+                        <div class="password-labels-row">
+                            <div class="password-label-row">普通密码</div>
+                            <div class="password-label-row">终极密码</div>
+                        </div>
+                        <!-- 第二行：密码值 -->
+                        <div class="password-values-row">
+                            <div class="password-value-box password-value-normal">${record.normalPw}</div>
+                            <div class="password-value-box password-value-ultimate">${record.ultimatePw}</div>
+                        </div>
+                        <!-- 第三行：复制按钮 -->
+                        <div class="copy-buttons-row">
+                            <button class="copy-btn-row normal" data-password="${record.normalPw}">复制</button>
+                            <button class="copy-btn-row ultimate" data-password="${record.ultimatePw}">复制</button>
+                        </div>
+                    </div>
+                    <button class="record-delete" data-id="${record.id}" title="删除此记录">&times; 删除</button>
+                `;
+                listEl.appendChild(itemEl);
+            });
+
+            // 为记录中的复制按钮绑定事件
+            listEl.querySelectorAll('.copy-btn-row').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var password = this.getAttribute('data-password');
+                    copyRecordPassword(password, this);
+                });
+            });
+
+            // 为删除按钮绑定事件
+            listEl.querySelectorAll('.record-delete').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var recordId = parseInt(this.getAttribute('data-id'));
+                    deleteRecord(recordId);
+                });
+            });
+        }
+
+        function copyRecordPassword(password, button) {
+            if (!password) return;
+            
+            navigator.clipboard.writeText(password).then(function() {
+                var originalText = button.textContent;
+                var originalBg = button.style.backgroundColor;
+                button.textContent = '✓ 已复制';
+                button.style.backgroundColor = '#4caf50';
+                setTimeout(function() {
+                    button.textContent = originalText;
+                    button.style.backgroundColor = originalBg;
+                }, 1500);
+            }).catch(function() {
+                alert('复制失败，请手动复制密码');
+            });
+        }
+
+        function deleteRecord(recordId) {
+            var records = loadRecords();
+            records = records.filter(function(r) { return r.id !== recordId; });
+            localStorage.setItem(RECORD_STORAGE_KEY, JSON.stringify(records));
+            renderRecordList();
+        }
+
+        function clearAllRecords() {
+            if (confirm('确定要清除所有生成记录吗？此操作不可撤销。')) {
+                localStorage.removeItem(RECORD_STORAGE_KEY);
+                renderRecordList();
+            }
+        }
+
+        function renderUserSelect() {
+            var users = getUsers();
+            var activeId = getActiveId();
+            userSelect.innerHTML = '';
+            users.forEach(function(u) {
+                var opt = document.createElement('option');
+                opt.value = u.id;
+                // 将S2,S3改为密钥1,密钥2
+                opt.textContent = u.name + ' (密钥1:' + u.key1 + ' 密钥2:' + u.key2 + ')';
+                if (u.id === activeId) opt.selected = true;
+                userSelect.appendChild(opt);
+            });
+        }
+
+        userSelect.addEventListener('change', function() {
+            setActiveId(parseInt(userSelect.value));
+        });
+
+        document.getElementById('btn-add').addEventListener('click', function() {
+            editingId = null;
+            document.getElementById('modal-title').textContent = '添加用户';
+            document.getElementById('modal-name').value = '';
+            document.getElementById('modal-key1').value = '';
+            document.getElementById('modal-key2').value = '';
+            modalUser.classList.add('show');
+        });
+
+        document.getElementById('btn-edit').addEventListener('click', function() {
+            var user = getActiveUser();
+            editingId = user.id;
+            document.getElementById('modal-title').textContent = '编辑用户';
+            document.getElementById('modal-name').value = user.name;
+            document.getElementById('modal-key1').value = user.key1;
+            document.getElementById('modal-key2').value = user.key2;
+            modalUser.classList.add('show');
+        });
+
+        document.getElementById('modal-cancel').addEventListener('click', function() { modalUser.classList.remove('show'); });
+        document.getElementById('modal-confirm').addEventListener('click', function() {
+            var name = document.getElementById('modal-name').value.trim();
+            var key1 = document.getElementById('modal-key1').value.trim();
+            var key2 = document.getElementById('modal-key2').value.trim();
+            if (!name) { alert('请输入用户名称'); return; }
+            var users = getUsers();
+            if (editingId !== null) {
+                users = users.map(function(u) {
+                    if (u.id === editingId) return { id: u.id, name: name, key1: key1 || '0', key2: key2 || '0' };
+                    return u;
+                });
+            } else {
+                var maxId = 0;
+                users.forEach(function(u){ if(u.id>maxId) maxId=u.id; });
+                users.push({ id: maxId + 1, name: name, key1: key1 || '0', key2: key2 || '0' });
+                setActiveId(maxId + 1);
+            }
+            saveUsers(users);
+            renderUserSelect();
+            modalUser.classList.remove('show');
+        });
+
+        document.getElementById('btn-del').addEventListener('click', function() {
+            var users = getUsers();
+            if (users.length <= 1) { alert('至少保留一个用户'); return; }
+            var user = getActiveUser();
+            deletingId = user.id;
+            document.getElementById('del-msg').textContent = '确定要删除用户「' + user.name + '」吗？';
+            modalDel.classList.add('show');
+        });
+
+        document.getElementById('del-cancel').addEventListener('click', function() { modalDel.classList.remove('show'); });
+        document.getElementById('del-confirm').addEventListener('click', function() {
+            var users = getUsers();
+            users = users.filter(function(u){ return u.id !== deletingId; });
+            saveUsers(users);
+            setActiveId(users[0].id);
+            renderUserSelect();
+            modalDel.classList.remove('show');
+        });
+
+        function initDatePicker() {
+            var today = new Date();
+            var tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+            var maxDate = new Date(today); maxDate.setDate(today.getDate() + 999);
+            expiryDateInput.min = tomorrow.toISOString().split('T')[0];
+            expiryDateInput.max = maxDate.toISOString().split('T')[0];
+            expiryDateInput.value = expiryDateInput.min;
+            updateCurrentDate();
+            updateDaysCount(expiryDateInput.value);
+        }
+
+        function updateCurrentDate() {
+            var now = new Date();
+            currentDateElement.textContent = now.getFullYear() + '年' + (now.getMonth()+1) + '月' + now.getDate() + '日';
+            return now;
+        }
+
+        function calculateDaysFromNow(selectedDateStr) {
+            var now = new Date(); now.setHours(0,0,0,0);
+            var selectedDate = new Date(selectedDateStr); selectedDate.setHours(0,0,0,0);
+            var daysDiff = Math.floor((selectedDate.getTime() - now.getTime()) / 86400000);
+            return Math.max(1, Math.min(999, daysDiff));
+        }
+
+        function updateDaysCount(selectedDateStr) {
+            var days = calculateDaysFromNow(selectedDateStr);
+            daysCountElement.textContent = days + '天';
+            return days;
+        }
+
+        function validateDate(selectedDateStr) {
+            var now = new Date(); now.setHours(0,0,0,0);
+            var selectedDate = new Date(selectedDateStr); selectedDate.setHours(0,0,0,0);
+            var daysDiff = Math.floor((selectedDate.getTime() - now.getTime()) / 86400000);
+            if (daysDiff < 1) { dateErrorElement.textContent = '不能选择今天或过去的日期'; dateErrorElement.classList.add('show'); return false; }
+            if (daysDiff > 999) { dateErrorElement.textContent = '最远只能选择999天后的日期'; dateErrorElement.classList.add('show'); return false; }
+            dateErrorElement.classList.remove('show');
+            return true;
+        }
+
+        function hexToDec10(hexStr) {
+            hexStr = hexStr.replace(/^0x/i, '');
+            var decimal = parseInt(hexStr, 16);
+            var decimalStr = decimal.toString();
+            if (decimalStr.length >= 10) return decimalStr.slice(-10);
+            return decimalStr.padStart(10, '0');
+        }
+
+        function replaceDigitsWithCode(num, mapping) {
+            var numStr = num.toString().padStart(3, '0');
+            var result = '';
+            for (var i = 0; i < numStr.length; i++) {
+                result += mapping[parseInt(numStr[i])];
+            }
+            return result;
+        }
+
+        function calculatePassword(hexCode, days, S2, S3) {
+            var dec10 = hexToDec10(hexCode);
+            var parts = [];
+            for (var i = 0; i < 10; i += 2) parts.push(dec10.substring(i, i + 2));
+
+            // 计算D1=密钥1各位数字之和, D2=密钥2各位数字之和
+            var D1 = S2.toString().split('').reduce(function(a, b) { return a + parseInt(b); }, 0);
+            var D2 = S3.toString().split('').reduce(function(a, b) { return a + parseInt(b); }, 0);
+            function pad2(n) { return n.toString().padStart(2, '0'); }
+
+            // 构造10位映射：第1-5位用原始parts，第6位同第1位，第7-10位用新规则
+            var allParts = [
+                parts[0],                                  // 第1位
+                parts[1],                                  // 第2位
+                parts[2],                                  // 第3位
+                parts[3],                                  // 第4位
+                parts[4],                                  // 第5位
+                parts[0],                                  // 第6位 = 第1位
+                pad2((parseInt(parts[1]) + D1) % 100),     // 第7位 = 第2位 + D1
+                pad2((parseInt(parts[2]) + D1) % 100),     // 第8位 = 第3位 + D1
+                pad2((parseInt(parts[3]) + D2) % 100),     // 第9位 = 第4位 + D2
+                pad2((parseInt(parts[4]) + D2) % 100)      // 第10位 = 第5位 + D2
+            ];
+
+            var digitMapping = {};
+            for (var j = 0; j < 10; j++) digitMapping[j] = allParts[j];
+            var S1 = 999 - days;
+            var numS1 = parseInt(replaceDigitsWithCode(S1, digitMapping));
+            var numS2 = parseInt(replaceDigitsWithCode(S2, digitMapping));
+            var numS3 = parseInt(replaceDigitsWithCode(S3, digitMapping));
+            var C4 = Math.floor((numS1 + numS2 + numS3) / 3);
+            var finalNum = 1000000000 + (C4 + S2 + S3) * 1000 + S1;
+            return finalNum.toString(16).toUpperCase();
+        }
+
+        function generatePassword() {
+            var hexCode = codeInput.value.toUpperCase();
+            var selectedDate = expiryDateInput.value;
+            var user = getActiveUser();
+            var S2 = parseInt(user.key1) || 0;
+            var S3 = parseInt(user.key2) || 0;
+            if (!hexCode || !/^[0-9A-F]+$/i.test(hexCode)) { alert('请输入有效的16进制数字！\n只能包含0-9, A-F'); return; }
+            if (!selectedDate) { dateErrorElement.textContent = '请选择到期日期'; dateErrorElement.classList.add('show'); return; }
+            if (!validateDate(selectedDate)) return;
+            updateCurrentDate();
+            var days = updateDaysCount(selectedDate);
+            passwordResult.textContent = calculatePassword(hexCode, days, S2, S3);
+            ultimateResult.textContent = calculatePassword(hexCode, 0, S2, S3);
+            resultContainer.classList.add('show');
+            
+            // 修改：保存记录时包含到期日期
+            var expiryDate = selectedDate; // 获取到期日期
+            savePasswordRecord(hexCode, days, expiryDate, user.name, passwordResult.textContent, ultimateResult.textContent);
+            renderRecordList();
+        }
+
+        function copyToClipboard(text, btn, originalColor) {
+            if (!text) { alert('请先生成密码！'); return; }
+            navigator.clipboard.writeText(text).then(function() {
+                var orig = btn.textContent;
+                btn.textContent = '✓ 已复制！';
+                btn.style.backgroundColor = '#4caf50';
+                setTimeout(function() { btn.textContent = orig; btn.style.backgroundColor = originalColor; }, 2000);
+            }).catch(function() { alert('复制失败，请手动复制密码'); });
+        }
+
+        copyBtn.addEventListener('click', function() { copyToClipboard(passwordResult.textContent, copyBtn, '#0d47a1'); });
+        copyUltimateBtn.addEventListener('click', function() { copyToClipboard(ultimateResult.textContent, copyUltimateBtn, '#d32f2f'); });
+        generateBtn.addEventListener('click', generatePassword);
+        codeInput.addEventListener('keypress', function(e) { if (e.key === 'Enter') generatePassword(); });
+        expiryDateInput.addEventListener('change', function() {
+            if (expiryDateInput.value) { if (validateDate(expiryDateInput.value)) updateDaysCount(expiryDateInput.value); }
+        });
+        document.getElementById('clear-all-btn').addEventListener('click', clearAllRecords);
+        window.addEventListener('load', function() {
+            renderUserSelect();
+            initDatePicker();
+            renderRecordList();
+            setTimeout(generatePassword, 300);
+        });
+        setInterval(updateCurrentDate, 60000);
+    </script>
+</body>
 </html>
